@@ -1,35 +1,36 @@
-require "thor"
-require "json"
-require "yaml"
-require "logger"
-require "openssl"
-require "influxdb"
-require "cloudwatch/sender/base"
-require "cloudwatch/sender/ec2"
-require "cloudwatch/sender/credentials"
-require "cloudwatch/sender/metric_definition"
-require "cloudwatch/sender/fetcher/base"
-require "cloudwatch/sender/fetcher/ec2"
-require "cloudwatch/sender/fetcher/sqs"
-require "cloudwatch/sender/fetcher/custom"
+require 'thor'
+require 'json'
+require 'yaml'
+require 'logger'
+require 'openssl'
+require 'influxdb'
+require 'cloudwatch/sender/base'
+require 'cloudwatch/sender/ec2'
+require 'cloudwatch/sender/credentials'
+require 'cloudwatch/sender/metric_definition'
+require 'cloudwatch/sender/fetcher/base'
+require 'cloudwatch/sender/fetcher/ec2'
+require 'cloudwatch/sender/fetcher/sqs'
+require 'cloudwatch/sender/fetcher/custom'
+require 'cloudwatch/sender/fetcher/elasticache'
 
 module Cloudwatch
   module Sender
     class CLI < Thor
       include Thor::Actions
 
-      class_option :provider, :desc => "AWS security provider", :required => false, :enum => %w(iam instance_profile)
-      class_option :access_key_id, :desc => "AWS access_key_id", :required => false
-      class_option :secret_access_key, :desc => "AWS secret_key_id", :required => false
-      class_option :region, :desc => "AWS region", :required => false
+      class_option :provider, desc: 'AWS security provider', required: false, enum: %w(iam instance_profile)
+      class_option :access_key_id, desc: 'AWS access_key_id', required: false
+      class_option :secret_access_key, desc: 'AWS secret_key_id', required: false
+      class_option :region, desc: 'AWS region', required: false
 
-      desc "send_metrics [metrics_file]", "Gets metrics from Cloudwatch and sends them to influx"
+      desc 'send_metrics [metrics_file]', 'Gets metrics from Cloudwatch and sends them to influx'
       def send_metrics(metrics_file, opts = {})
-        setup_aws(options.merge(opts), opts["provider"])
+        setup_aws(options.merge(opts), opts['provider'])
         MetricDefinition.metric_type load_metrics(metrics_file)
       end
 
-      desc "continuous [metrics_file] [sleep time]", "Continuously sends metrics to Influx/Cloudwatch"
+      desc 'continuous [metrics_file] [sleep time]', 'Continuously sends metrics to Influx/Cloudwatch'
       def continuous(metrics_file, sleep_time = 60, opts = {})
         logger = Logger.new(STDOUT)
 
@@ -41,7 +42,7 @@ module Cloudwatch
             logger.error("Required argument invalid or missing '#{e}'")
             exit(1)
           rescue Aws::Errors::MissingCredentialsError => e
-            logger.error("#{e}")
+            logger.error(e)
             exit(1)
           rescue => e
             logger.debug("Unable to complete operation #{e}")
@@ -59,7 +60,7 @@ module Cloudwatch
         end
 
         def validate_provider(provider)
-          return "access_key_id" if provider.nil?
+          return 'access_key_id' if provider.nil?
           if %w(iam instance_profile).include? provider.downcase
             provider.downcase
           else
@@ -68,7 +69,7 @@ module Cloudwatch
         end
 
         def send_metrics_ruby(hash, opts = {})
-          setup_aws(options.merge(opts), opts["provider"])
+          setup_aws(options.merge(opts), opts['provider'])
           MetricDefinition.metric_type hash
         end
       end
