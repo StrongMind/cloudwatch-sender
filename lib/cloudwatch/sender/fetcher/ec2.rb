@@ -61,9 +61,9 @@ module Cloudwatch
         def check_statistics(instanceid, name, label, statistics, time, data)
           statistics.each do |stat|
             data = {
-              :tags      => { name.tr("^A-Za-z0-9", "") => label.downcase, "instance" => instanceid.tr("-", "") },
+              :tags      => { 'namespace' => name.tr("^A-Za-z0-9", ""), "instance" => instanceid.tr("-", "") },
               :timestamp => time,
-              :values    => { :value => data[stat.downcase] }
+              :values    => { label.downcase => data[stat.downcase] }
             }
 
             sender.write_data(data)
