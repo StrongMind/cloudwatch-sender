@@ -23,6 +23,7 @@ module Cloudwatch
       class_option :access_key_id, desc: 'AWS access_key_id', required: false
       class_option :secret_access_key, desc: 'AWS secret_key_id', required: false
       class_option :region, desc: 'AWS region', required: false
+      class_option :log_level, desc: 'Log level', required: false, default: 'info'
 
       desc 'send_metrics [metrics_file]', 'Gets metrics from Cloudwatch and sends them to influx'
       def send_metrics(metrics_file, opts = {})
@@ -32,12 +33,15 @@ module Cloudwatch
 
       desc 'continuous [metrics_file] [sleep time]', 'Continuously sends metrics to Influx/Cloudwatch'
       def continuous(metrics_file, sleep_time = 60, opts = {})
-        logger = Logger.new(STDOUT)
+        logger = Logger.new(STDOUT, level: options[:log_level])
 
         loop do
           begin
+            logger.info('Sending metrics from cloudwatch to influxdb')
             send_metrics(metrics_file, options.merge(opts))
-            sleep sleep_time.to_i
+            rounded_sleep_time = sleep_time.to_i - (Time.now.to_i % sleep_time.to_i)
+            logger.debug("Sleeping for #{rounded_sleep_time} seconds")
+            sleep rounded_sleep_time
           rescue RequiredArgumentMissingError, ArgumentError => e
             logger.error("Required argument invalid or missing '#{e}'")
             exit(1)
@@ -45,7 +49,7 @@ module Cloudwatch
             logger.error(e)
             exit(1)
           rescue => e
-            logger.debug("Unable to complete operation #{e}")
+            logger.error("Unable to complete operation #{e}")
           end
         end
       end
@@ -66,11 +70,6 @@ module Cloudwatch
           else
             fail ArgumentError.new("'--provider' invalid argument '#{options['provider']}'")
           end
-        end
-
-        def send_metrics_ruby(hash, opts = {})
-          setup_aws(options.merge(opts), opts['provider'])
-          MetricDefinition.metric_type hash
         end
       end
     end

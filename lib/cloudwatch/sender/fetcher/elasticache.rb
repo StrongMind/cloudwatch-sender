@@ -9,8 +9,7 @@ module Cloudwatch
           @sender = sender
         end
 
-        START_TIME = 240 # past 4 minutes
-        #START_TIME = 1200
+        START_TIME = 240
 
         def metrics(component_meta, metric)
           params = {
@@ -19,7 +18,7 @@ module Cloudwatch
             dimensions: [{ name: 'CacheClusterId', value: component_meta['cache_cluster'] }],
             start_time: Time.now - START_TIME,
             end_time: Time.now,
-            period: 60,
+            period: 30,
             statistics: metric['statistics'],
             unit: metric['unit']
           }
